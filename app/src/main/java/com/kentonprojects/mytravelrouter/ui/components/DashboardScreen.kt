@@ -59,20 +59,21 @@ fun DashboardScreen(
         
         Spacer(modifier = Modifier.height(40.dp))
         
-        // VPN Status Card
-        VpnStatusCard(
-            isConnected = vpnState.isConnected,
-            isConnecting = vpnState.isConnecting,
-            onToggleConnection = {
-                if (vpnState.isConnected) {
-                    vpnViewModel.disconnectVpn()
-                } else {
-                    vpnState.currentConfig?.let { config ->
-                        vpnViewModel.connectVpn(config.name)
+                // VPN Status Card
+                VpnStatusCard(
+                    isConnected = vpnState.isConnected,
+                    isConnecting = vpnState.isConnecting,
+                    hasConfig = vpnState.currentConfig != null,
+                    onToggleConnection = {
+                        if (vpnState.isConnected) {
+                            vpnViewModel.disconnectVpn()
+                        } else {
+                            vpnState.currentConfig?.let { config ->
+                                vpnViewModel.connectVpn(config.name)
+                            }
+                        }
                     }
-                }
-            }
-        )
+                )
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -104,22 +105,40 @@ fun DashboardScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Error Message
-        vpnState.error?.let { error ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = error,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
+                // No Configuration Message
+                if (vpnState.currentConfig == null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Text(
+                            text = "No VPN configuration found. Go to Settings to import a .conf file.",
+                            modifier = Modifier.padding(16.dp),
+                            color = Color(0xFFFF9800),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+                
+                // Error Message
+                vpnState.error?.let { error ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
     }
 }
 
@@ -257,6 +276,7 @@ fun SmartphoneImage() {
 fun VpnStatusCard(
     isConnected: Boolean,
     isConnecting: Boolean,
+    hasConfig: Boolean,
     onToggleConnection: () -> Unit
 ) {
     Card(
@@ -281,19 +301,26 @@ fun VpnStatusCard(
                     color = Color.White
                 )
                 
-                Text(
-                    text = if (isConnecting) "Connecting..." 
-                           else if (isConnected) "Connected" 
-                           else "Disconnected",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isConnected) Color(0xFF00BCD4) else Color.Gray
-                )
+                        Text(
+                            text = when {
+                                isConnecting -> "Connecting..."
+                                isConnected -> "Connected"
+                                !hasConfig -> "No Configuration"
+                                else -> "Disconnected"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = when {
+                                isConnected -> Color(0xFF00BCD4)
+                                !hasConfig -> Color(0xFFFF9800)
+                                else -> Color.Gray
+                            }
+                        )
             }
             
             Switch(
                 checked = isConnected,
                 onCheckedChange = { onToggleConnection() },
-                enabled = !isConnecting,
+                enabled = !isConnecting && hasConfig,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = Color(0xFF00BCD4),

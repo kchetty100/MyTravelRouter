@@ -90,18 +90,51 @@ class TravelRouterVpnService : VpnService() {
                 return
             }
             
-            // Create VPN interface with basic configuration
+            // Create VPN interface with real WireGuard configuration
             val builder = Builder()
-                .setSession("TravelRouter VPN")
-                .addAddress("10.0.0.2", 24) // Default client IP
-                .addDnsServer("8.8.8.8")
-                .addDnsServer("8.8.4.4")
-                .setMtu(1420)
-                .setBlocking(false)
+                .setSession("TravelRouter VPN - ${config.name}")
             
-            // Add allowed applications (all traffic)
-            builder.addRoute("0.0.0.0", 0)
-            builder.addRoute("::", 0)
+            // Add address from config
+            if (config.interfaceConfig.address.isNotEmpty()) {
+                val addressParts = config.interfaceConfig.address.split("/")
+                if (addressParts.size == 2) {
+                    val ip = addressParts[0]
+                    val prefixLength = addressParts[1].toIntOrNull() ?: 32
+                    builder.addAddress(ip, prefixLength)
+                }
+            } else {
+                builder.addAddress("10.0.0.2", 32) // Fallback
+            }
+            
+            // Add DNS from config
+            if (config.interfaceConfig.dns.isNotEmpty()) {
+                val dnsServers = config.interfaceConfig.dns.split(",")
+                dnsServers.forEach { dns ->
+                    builder.addDnsServer(dns.trim())
+                }
+            } else {
+                builder.addDnsServer("1.1.1.1")
+                builder.addDnsServer("8.8.8.8")
+            }
+            
+            builder.setMtu(1420)
+            builder.setBlocking(false)
+            
+            // Add routes from config
+            if (config.peerConfig.allowedIPs.isNotEmpty()) {
+                val allowedIPs = config.peerConfig.allowedIPs.split(",")
+                allowedIPs.forEach { ip ->
+                    val parts = ip.trim().split("/")
+                    if (parts.size == 2) {
+                        val ipAddress = parts[0]
+                        val prefixLength = parts[1].toIntOrNull() ?: 32
+                        builder.addRoute(ipAddress, prefixLength)
+                    }
+                }
+            } else {
+                builder.addRoute("0.0.0.0", 0)
+                builder.addRoute("::", 0)
+            }
             
             vpnInterface = builder.establish()
             

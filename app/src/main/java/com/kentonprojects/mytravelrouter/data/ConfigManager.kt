@@ -16,8 +16,23 @@ import java.nio.charset.StandardCharsets
 data class WireGuardConfig(
     val name: String,
     val rawConfig: String,
+    val interfaceConfig: InterfaceConfig,
+    val peerConfig: PeerConfig,
     val endpoint: String = "",
-    val peerCount: Int = 0
+    val peerCount: Int = 1
+)
+
+data class InterfaceConfig(
+    val privateKey: String = "",
+    val address: String = "",
+    val dns: String = ""
+)
+
+data class PeerConfig(
+    val publicKey: String = "",
+    val endpoint: String = "",
+    val allowedIPs: String = "",
+    val persistentKeepalive: String = ""
 )
 
 class ConfigManager(private val context: Context) {
@@ -124,18 +139,58 @@ class ConfigManager(private val context: Context) {
     }
     
     private fun parseConfig(rawConfig: String, name: String): WireGuardConfig {
-        // Simple parsing for basic WireGuard config
         val lines = rawConfig.lines()
+        var interfaceConfig = InterfaceConfig()
+        var peerConfig = PeerConfig()
         var endpoint = ""
         var peerCount = 0
+        var currentSection = ""
         
         for (line in lines) {
+            val trimmedLine = line.trim()
+            
             when {
-                line.startsWith("Endpoint = ") -> {
-                    endpoint = line.substringAfter("Endpoint = ").trim()
+                trimmedLine.startsWith("[Interface]") -> {
+                    currentSection = "Interface"
                 }
-                line.startsWith("[Peer]") -> {
+                trimmedLine.startsWith("[Peer]") -> {
+                    currentSection = "Peer"
                     peerCount++
+                }
+                trimmedLine.startsWith("PrivateKey = ") && currentSection == "Interface" -> {
+                    interfaceConfig = interfaceConfig.copy(
+                        privateKey = trimmedLine.substringAfter("PrivateKey = ").trim()
+                    )
+                }
+                trimmedLine.startsWith("Address = ") && currentSection == "Interface" -> {
+                    interfaceConfig = interfaceConfig.copy(
+                        address = trimmedLine.substringAfter("Address = ").trim()
+                    )
+                }
+                trimmedLine.startsWith("DNS = ") && currentSection == "Interface" -> {
+                    interfaceConfig = interfaceConfig.copy(
+                        dns = trimmedLine.substringAfter("DNS = ").trim()
+                    )
+                }
+                trimmedLine.startsWith("PublicKey = ") && currentSection == "Peer" -> {
+                    peerConfig = peerConfig.copy(
+                        publicKey = trimmedLine.substringAfter("PublicKey = ").trim()
+                    )
+                }
+                trimmedLine.startsWith("Endpoint = ") && currentSection == "Peer" -> {
+                    val endpointValue = trimmedLine.substringAfter("Endpoint = ").trim()
+                    peerConfig = peerConfig.copy(endpoint = endpointValue)
+                    endpoint = endpointValue
+                }
+                trimmedLine.startsWith("AllowedIPs = ") && currentSection == "Peer" -> {
+                    peerConfig = peerConfig.copy(
+                        allowedIPs = trimmedLine.substringAfter("AllowedIPs = ").trim()
+                    )
+                }
+                trimmedLine.startsWith("PersistentKeepalive = ") && currentSection == "Peer" -> {
+                    peerConfig = peerConfig.copy(
+                        persistentKeepalive = trimmedLine.substringAfter("PersistentKeepalive = ").trim()
+                    )
                 }
             }
         }
@@ -143,6 +198,8 @@ class ConfigManager(private val context: Context) {
         return WireGuardConfig(
             name = name,
             rawConfig = rawConfig,
+            interfaceConfig = interfaceConfig,
+            peerConfig = peerConfig,
             endpoint = endpoint,
             peerCount = peerCount
         )

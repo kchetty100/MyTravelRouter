@@ -16,6 +16,10 @@
     
     <!-- VPN Service Permission -->
     <uses-permission android:name="android.permission.BIND_VPN_SERVICE" />
+    
+    <!-- File Access Permissions -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_FILES" />
 
     <application
         android:allowBackup="true"

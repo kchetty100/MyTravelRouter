@@ -20,6 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kentonprojects.mytravelrouter.ui.components.DashboardScreen
+import com.kentonprojects.mytravelrouter.ui.components.SettingsScreen
+import com.kentonprojects.mytravelrouter.ui.components.AddConfigScreen
+import com.kentonprojects.mytravelrouter.ui.components.ConfigScreen
 import com.kentonprojects.mytravelrouter.ui.theme.MyTravelRouterTheme
 import com.kentonprojects.mytravelrouter.viewmodel.VpnViewModel
 
@@ -106,21 +109,12 @@ fun TravelRouterApp(vpnViewModel: VpnViewModel) {
                 onNavigateToSettings = { selectedTab = 1 }
             )
             1 -> {
-                // Placeholder for Settings screen
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Settings\n(Coming Soon)",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                // Settings screen with configuration management
+                SettingsScreen(
+                    vpnViewModel = vpnViewModel,
+                    onNavigateToAddConfig = { selectedTab = 3 },
+                    onNavigateToConfigs = { selectedTab = 4 }
+                )
             }
             2 -> {
                 // Placeholder for Profile screen
@@ -138,6 +132,24 @@ fun TravelRouterApp(vpnViewModel: VpnViewModel) {
                         textAlign = TextAlign.Center
                     )
                 }
+            }
+            3 -> {
+                // Add Configuration screen
+                AddConfigScreen(
+                    vpnViewModel = vpnViewModel,
+                    onNavigateBack = { selectedTab = 1 }
+                )
+            }
+            4 -> {
+                // Configurations list screen
+                ConfigScreen(
+                    vpnViewModel = vpnViewModel,
+                    onNavigateToAddConfig = { selectedTab = 3 },
+                    onNavigateToEditConfig = { configName ->
+                        // For now, just go back to settings
+                        selectedTab = 1
+                    }
+                )
             }
         }
     }
