@@ -2,8 +2,6 @@ package com.kentonprojects.mytravelrouter.ui.components
 
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,15 +18,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.kentonprojects.mytravelrouter.R
-import com.kentonprojects.mytravelrouter.ui.theme.SuccessGreen
-import com.kentonprojects.mytravelrouter.ui.theme.ErrorRed
 import com.kentonprojects.mytravelrouter.viewmodel.VpnViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,36 +38,31 @@ fun DashboardScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(24.dp)
     ) {
-        // Header
-        Row(
+        // Title at top left
+        Text(
+            text = "TravelRouter",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
+        
+        // Centered phone animation
+        Box(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "TravelRouter",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
-            
-            IconButton(onClick = onNavigateToSettings) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings"
-                )
-            }
+            PhoneAnimation()
         }
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(40.dp))
         
         // VPN Status Card
         VpnStatusCard(
             isConnected = vpnState.isConnected,
             isConnecting = vpnState.isConnecting,
-            configName = vpnState.currentConfig?.name,
             onToggleConnection = {
                 if (vpnState.isConnected) {
                     vpnViewModel.disconnectVpn()
@@ -84,18 +74,33 @@ fun DashboardScreen(
             }
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
-        // Data Usage Card
-        DataUsageCard(
+        // Connection Info Card
+        ConnectionInfoCard(
+            endpoint = vpnState.currentConfig?.endpoint ?: "203.0.113.45:51820",
             bytesIn = vpnState.bytesIn,
             bytesOut = vpnState.bytesOut
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.weight(1f))
         
-        // Hotspot Button
-        HotspotButton()
+        // Enable Hotspot Button (text-only)
+        TextButton(
+            onClick = {
+                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Enable Hotspot",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color(0xFF00BCD4)
+            )
+        }
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -119,123 +124,255 @@ fun DashboardScreen(
 }
 
 @Composable
-fun VpnStatusCard(
-    isConnected: Boolean,
-    isConnecting: Boolean,
-    configName: String?,
-    onToggleConnection: () -> Unit
-) {
-    val context = LocalContext.current
+fun PhoneAnimation() {
     val composition by rememberLottieComposition(LottieCompositionSpec.Asset("wifi_animation.json"))
     val progress by animateLottieCompositionAsState(
         composition = composition,
-        iterations = if (isConnected) Int.MAX_VALUE else 1,
-        isPlaying = isConnected || isConnecting
+        iterations = Int.MAX_VALUE,
+        isPlaying = true
     )
     
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isConnected) SuccessGreen.copy(alpha = 0.1f) 
-                           else MaterialTheme.colorScheme.surfaceVariant
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Pulsing Wi-Fi Animation
+        LottieAnimation(
+            composition = composition,
+            progress = { progress },
+            modifier = Modifier.size(120.dp)
         )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Smartphone Image
+        SmartphoneImage()
+    }
+}
+
+@Composable
+fun SmartphoneImage() {
+    Box(
+        modifier = Modifier
+            .size(width = 80.dp, height = 140.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF2C2C2C))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Lottie Animation
-            LottieAnimation(
-                composition = composition,
-                progress = { progress },
-                modifier = Modifier.size(80.dp)
+            // Notch
+            Box(
+                modifier = Modifier
+                    .size(width = 20.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(0xFF1A1A1A))
+                    .padding(top = 8.dp)
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
-            // Status Text
-            Text(
-                text = when {
-                    isConnecting -> "Connecting..."
-                    isConnected -> "Connected"
-                    else -> "Disconnected"
-                },
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = when {
-                    isConnecting -> MaterialTheme.colorScheme.primary
-                    isConnected -> SuccessGreen
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
-            )
-            
-            // Config Name
-            configName?.let { name ->
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Toggle Button
-            Button(
-                onClick = onToggleConnection,
-                enabled = !isConnecting,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isConnected) ErrorRed else MaterialTheme.colorScheme.primary
-                ),
-                modifier = Modifier.fillMaxWidth()
+            // Screen
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF1A1A1A))
             ) {
-                Text(
-                    text = if (isConnected) "Disconnect" else "Connect",
-                    style = MaterialTheme.typography.titleMedium
-                )
+                // Screen content
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Status bar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Time
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp, 4.dp)
+                                .background(Color(0xFF00BCD4), RoundedCornerShape(2.dp))
+                        )
+                        
+                        // Battery
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp, 4.dp)
+                                .background(Color(0xFF00BCD4), RoundedCornerShape(2.dp))
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // App icon grid
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        repeat(3) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(Color(0xFF00BCD4), RoundedCornerShape(2.dp))
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        repeat(3) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(Color(0xFF00BCD4), RoundedCornerShape(2.dp))
+                            )
+                        }
+                    }
+                }
             }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Home button
+            Box(
+                modifier = Modifier
+                    .size(20.dp, 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(0xFF1A1A1A))
+            )
         }
     }
 }
 
 @Composable
-fun DataUsageCard(
+fun VpnStatusCard(
+    isConnected: Boolean,
+    isConnecting: Boolean,
+    onToggleConnection: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "WireGuard",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+                
+                Text(
+                    text = if (isConnecting) "Connecting..." 
+                           else if (isConnected) "Connected" 
+                           else "Disconnected",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isConnected) Color(0xFF00BCD4) else Color.Gray
+                )
+            }
+            
+            Switch(
+                checked = isConnected,
+                onCheckedChange = { onToggleConnection() },
+                enabled = !isConnecting,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF00BCD4),
+                    uncheckedThumbColor = Color.Gray,
+                    uncheckedTrackColor = Color(0xFF424242)
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun ConnectionInfoCard(
+    endpoint: String,
     bytesIn: Long,
     bytesOut: Long
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(20.dp)
         ) {
-            Text(
-                text = "Data Usage",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
+            // Server Endpoint
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                DataUsageItem(
-                    label = "Downloaded",
-                    bytes = bytesIn,
-                    color = MaterialTheme.colorScheme.primary
+                Text(
+                    text = "Server Endpoint",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
                 )
-                
-                DataUsageItem(
-                    label = "Uploaded",
-                    bytes = bytesOut,
-                    color = MaterialTheme.colorScheme.secondary
+                Text(
+                    text = endpoint,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Data Usage - Received
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Data Usage",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+                Text(
+                    text = formatBytes(bytesIn),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Sent
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Sent",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+                Text(
+                    text = formatBytes(bytesOut),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
                 )
             }
         }
@@ -253,7 +390,7 @@ fun DataUsageItem(
     ) {
         Text(
             text = formatBytes(bytes),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = color
         )
@@ -261,13 +398,13 @@ fun DataUsageItem(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color.Gray
         )
     }
 }
 
 @Composable
-fun HotspotButton() {
+fun EnableHotspotButton() {
     val context = LocalContext.current
     
     Button(
@@ -277,22 +414,28 @@ fun HotspotButton() {
             }
             context.startActivity(intent)
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.tertiary
-        )
+            containerColor = Color(0xFF00BCD4)
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
     ) {
         Icon(
             imageVector = Icons.Default.Share,
             contentDescription = null,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(24.dp),
+            tint = Color.White
         )
         
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(12.dp))
         
         Text(
-            text = "Open Hotspot Settings",
-            style = MaterialTheme.typography.titleMedium
+            text = "Enable Hotspot",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
         )
     }
 }
