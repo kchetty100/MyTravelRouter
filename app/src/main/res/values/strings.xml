@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TravelRouter</string>
+    <string name="vpn_service_notification_title">TravelRouter VPN</string>
+    <string name="vpn_service_notification_content">VPN is running</string>
+    <string name="vpn_permission_required">VPN permission is required to use this app</string>
+    <string name="config_saved">Configuration saved successfully</string>
+    <string name="config_deleted">Configuration deleted successfully</string>
+    <string name="invalid_config">Invalid WireGuard configuration</string>
+    <string name="connection_failed">Failed to connect to VPN</string>
+    <string name="disconnection_failed">Failed to disconnect from VPN</string>
+</resources>
